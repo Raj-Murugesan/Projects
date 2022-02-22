@@ -1,0 +1,8 @@
+com\lamda\SqsCommandsHandler.class
+com\lamda\Party.class
+com\data\SqsRecord.class
+com\CommonUtil.class
+com\data\SQSEvent.class
+com\exception\SqsCommandException.class
+com\lamda\BaseCommand.class
+com\lamda\CommandsHelper.class

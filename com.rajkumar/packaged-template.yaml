@@ -1,0 +1,64 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: "employee\nSample SAM Template for employee\n"
+Parameters:
+  LambdaIAMRole:
+    Type: String
+    Default: arn:aws:iam::461613610588:role/rajkumar_murugesan
+  BrResourceNamePrefix:
+    Type: String
+    Default: test-raj
+Resources:
+  EventTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      AttributeDefinitions:
+      - AttributeName: pk
+        AttributeType: S
+      - AttributeName: sk
+        AttributeType: S
+      KeySchema:
+      - AttributeName: pk
+        KeyType: HASH
+      - AttributeName: sk
+        KeyType: RANGE
+      TableName: test-raj
+      ProvisionedThroughput:
+        ReadCapacityUnits: 2
+        WriteCapacityUnits: 2
+  SQSCommandDLQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      MessageRetentionPeriod: 345600
+      QueueName:
+        Fn::Sub: ${BrResourceNamePrefix}-deadLetter_queue
+  SQSCommandQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      MessageRetentionPeriod: 345600
+      VisibilityTimeout: 480
+      QueueName:
+        Fn::Sub: ${BrResourceNamePrefix}conv_queue
+      RedrivePolicy:
+        deadLetterTargetArn:
+          Fn::GetAtt:
+          - SQSCommandDLQueue
+          - Arn
+        maxReceiveCount: 5
+  SQSCommandFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: s3://rajkumar-aws-bucket/f13dd491f49d62f7c20178ae7f002057
+      Handler: com.lambda.SqsCommandsHandler::handleRequest
+      Runtime: java8
+      Tracing: Active
+      Role:
+        Fn::Sub: ${LambdaIAMRole}
+      Events:
+        ConversionCommand:
+          Type: SQS
+          Properties:
+            Queue:
+              Fn::GetAtt:
+              - SQSCommandQueue
+              - Arn
